@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using MyVet.Web.Data;
+using MyVet.Web.Data.Entities;
 using MyVET;
 
 namespace MyVet.Web
