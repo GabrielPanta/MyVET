@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using MyVET.Data.Entities;
+using MyVET.Models;
 
 namespace MyVET.Helper
 {
@@ -11,13 +12,17 @@ namespace MyVET.Helper
     {
         private readonly UserManager<User> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly SignInManager<User> _signInManager;
 
         public UserHelper(
             UserManager<User> userManager,
-            RoleManager<IdentityRole> roleManager)
+            RoleManager<IdentityRole> roleManager,
+            SignInManager<User> signInManager
+            )
         {
             _userManager = userManager;
             _roleManager = roleManager;
+            _signInManager = signInManager;
         }
 
         public async Task<IdentityResult> AddUserAsync(User user, string password)
@@ -52,5 +57,20 @@ namespace MyVET.Helper
         {
             return await _userManager.IsInRoleAsync(user, roleName);
         }
+
+        public async Task<SignInResult> LoginAsync(LoginViewModel model)
+        {
+            return await _signInManager.PasswordSignInAsync(
+                model.Username,
+                model.Password,
+                model.RememberMe,
+                false);
+        }
+
+        public async Task LogoutAsync()
+        {
+            await _signInManager.SignOutAsync();
+        }
+
     }
 }
