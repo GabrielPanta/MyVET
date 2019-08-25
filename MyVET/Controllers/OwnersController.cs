@@ -28,7 +28,7 @@ namespace MyVET.Controllers
             //Mandamos =>Include como si fuera un innerjoin
             return View(_context.Owners
                 .Include(o => o.User)
-                .Include(o=>o.Pets));
+                .Include(o => o.Pets));
         }
 
         // GET: Owners/Details/5
@@ -38,9 +38,13 @@ namespace MyVET.Controllers
             {
                 return NotFound();
             }
-
             var owner = await _context.Owners
-                .FirstOrDefaultAsync(m => m.Id == id);
+                 .Include(o => o.User)
+                    .Include(o => o.Pets)
+                    .ThenInclude(p=>p.PetType)
+                    .Include(o => o.Pets)
+                    .ThenInclude(p=>p.Histories)
+                        .FirstOrDefaultAsync(o => o.Id == id.Value);
             if (owner == null)
             {
                 return NotFound();
