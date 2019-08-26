@@ -8,6 +8,10 @@ using Microsoft.EntityFrameworkCore;
 using MyVET.Data;
 using MyVet.Web.Data.Entities;
 using Microsoft.AspNetCore.Authorization;
+using MyVET.Models;
+using MyVET.Data.Entities;
+using MyVET.Helper;
+using Microsoft.AspNetCore.Identity;
 
 namespace MyVET.Controllers
 {
@@ -16,10 +20,14 @@ namespace MyVET.Controllers
     public class OwnersController : Controller
     {
         private readonly DataContext _context;
+        private readonly IUserHelper _userHelper;
 
-        public OwnersController(DataContext context)
+        public OwnersController(
+            DataContext context,
+            IUserHelper userHelper)
         {
             _context = context;
+            _userHelper = userHelper;
         }
 
         // GET: Owners
@@ -64,15 +72,57 @@ namespace MyVET.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id")] Owner owner)
+        public async Task<IActionResult> Create(AddUserViewModel view)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(owner);
+                var user = await AddUser(view);
+
+                if (user == null)
+                {
+                    ModelState.AddModelError(string.Empty, "This email is already used.");
+                    return View(view);
+                }
+
+                var owner = new Owner
+                {
+                    Agendas = new List<Agenda>(),
+                    Pets = new List<Pet>(),
+                    User = user,
+                };
+
+                _context.Owners.Add(owner);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            return View(owner);
+
+            return View(view);
+
+        }
+
+        private async Task<User> AddUser(AddUserViewModel view)
+        {
+            var user = new User
+            {
+                Address = view.Address,
+                Document = view.Document,
+                Email = view.Username,
+                FirstName = view.FirstName,
+                LastName = view.LastName,
+                PhoneNumber = view.PhoneNumber,
+                UserName = view.Username
+            };
+
+            var result = await _userHelper.AddUserAsync(user, view.Password);
+            if (result != IdentityResult.Success)
+            {
+                return null;
+            }
+
+            var newUser = await _userHelper.GetUserByEmailAsync(view.Username);
+            await _userHelper.AddUserToRoleAsync(newUser, "Customer");
+            return newUser;
+
         }
 
         // GET: Owners/Edit/5
