@@ -21,13 +21,16 @@ namespace MyVET.Controllers
     {
         private readonly DataContext _context;
         private readonly IUserHelper _userHelper;
+        private readonly ICombosHelper _combosHelper;
 
         public OwnersController(
             DataContext context,
-            IUserHelper userHelper)
+            IUserHelper userHelper,
+            ICombosHelper combosHelper)
         {
             _context = context;
             _userHelper = userHelper;
+             _combosHelper = combosHelper;
         }
 
         // GET: Owners
@@ -49,9 +52,9 @@ namespace MyVET.Controllers
             var owner = await _context.Owners
                  .Include(o => o.User)
                     .Include(o => o.Pets)
-                    .ThenInclude(p=>p.PetType)
+                    .ThenInclude(p => p.PetType)
                     .Include(o => o.Pets)
-                    .ThenInclude(p=>p.Histories)
+                    .ThenInclude(p => p.Histories)
                         .FirstOrDefaultAsync(o => o.Id == id.Value);
             if (owner == null)
             {
@@ -208,6 +211,30 @@ namespace MyVET.Controllers
         private bool OwnerExists(int id)
         {
             return _context.Owners.Any(e => e.Id == id);
+        } 
+        public async Task<IActionResult> AddPet(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var owner = await _context.Owners.FindAsync(id.Value);
+
+            if (owner == null)
+            {
+                return NotFound();
+            }
+
+            var model = new PetViewModel {
+
+                Born = DateTime.Today,
+                OwnerId = owner.Id,
+                PetTypes = _combosHelper.GetComboPetTypes()
+            };
+
+            return View(model);
         }
+
     }
 }
